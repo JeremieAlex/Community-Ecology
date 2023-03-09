@@ -1,0 +1,90 @@
+---
+title: "A8_Alexander_Jeremie"
+author: "Jeremie Alexander"
+date: "07/03/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Set working directory and import data
+
+```{r}
+setwd("~/Documents/BIOL_432/Week_8/Assignment")
+FloralData = read.csv("FloristicSurvey.csv")
+```
+
+Check Data using data checking fuctions
+
+```{r}
+head(FloralData)
+tail(FloralData)
+str(FloralData)
+```
+
+Question #1: What effect (if any) does garlic mustard have on the plant community?
+
+To answer this question, I will create a Bray-Curtis dissimilarity tree to measure the abundance of each plant. I will then separate samples by their location (inside garlic mustard patch (i) or outside garlic mustard patch (o)) 
+
+```{r}
+#Split dataset into plant community data and label data
+PlantCommunityData = FloralData[,-c(2:10)]
+LabelData = FloralData[,1:3]
+
+#Import Libraries
+library(vegan)
+library(ggtree)
+library(ape)
+
+#Generate Bray-Curtis Dissimilarity tree
+PlantCommunityData2 <- PlantCommunityData[,-1]
+rownames(PlantCommunityData2) <- PlantCommunityData[,1]
+?nj
+Community_Distance = vegdist(PlantCommunityData2, methods="bray", binary = F)
+ComDistTree = nj(Community_Distance)
+ggtree(ComDistTree, layout = "rectangular") %<+% LabelData + geom_tiplab(aes(colour=Location)) + theme(legend.position = "right")
+
+```
+
+Figure 1. Neighbor joining tree based on a Bray-Curtis dissimilarity matrix formed from the abundance data of 34 different plants species. Each code corresponds to the specific plot whereas the color represents whether the plot is inside (i, red) or outside (o, blue) of a garlic mustard patch.
+
+Based on this plot, the presence of garlic mustard doesn't appear to have a major effect on the abundance of the plant community. While there are discrepancies in branch lengths (abundances), they do not appear to be predominantly grouped into (i) or (o) groups.  
+
+
+
+Question #2: What has a stronger effect on plant communities: the presence/absence of garlic mustard (in/out) or sampling population?
+
+To answer this question, I will generate clusters based on Non-Metric Multdimensional scaling (NMDS). This will allow us to visualize if the presence/absence of garlic mustard has an overall effect in dictating the similarity of plant communities. If one class clusters better than the other, it could be due to the presence of garlic mustard in that plot.
+
+```{r}
+#Generate dissimilarity
+set.seed(10)
+NMDSPlantcomDat = metaMDS(Community_Distance, k=2)
+head(NMDSPlantcomDat$points)
+#Generate plot data
+CommPlotDat = data.frame(NMDS1 = NMDSPlantcomDat$points[,1],
+                         NMDS2 = NMDSPlantcomDat$points[,2],
+                         Location = LabelData$Location)
+#Create plot
+
+library(ggplot2)
+qplot(x=NMDS1, y=NMDS2, colour=Location, alpha=I(0.6), data=CommPlotDat)
+```
+
+Figure 2. Non-Metric Multdimensional scaling (NMDS) plot based on the disimilarity of plant abundance in 34 species. Each data point represent an indivudual plot whereas colors color represent whether the plot is inside (i, red) or outside (o, blue) of a garlic mustard patch.
+
+Based on Figure 2. neither the presence (i) or absence (o) of garlic mustard appear to have a strong effect on the plant community. Individual samples from both categories appear to be evenly spread throughout the plot suggesting that that garlic mustard may not have a huge effect in dictating the similarity of neighboring plants.
+
+
+Overall conclusion:
+
+Overall, the presence of garlic mustard does not appear to have a huge effect on plant abundance as can be seen by the even distribution of abundances in both plot categories in Figure 1. Moreover, the lack of clustering seen in Figure 2. suggests that neither plot condition has very strong influence in dictating plant community similarity.
+
+
+
+
+
+
+
